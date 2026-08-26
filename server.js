@@ -27,9 +27,13 @@ const db = new sqlite3.Database(dbFile, (err) => {
         db.run(`CREATE TABLE IF NOT EXISTS leads (id INTEGER PRIMARY KEY AUTOINCREMENT, qualifiedLeads TEXT, bookedCalls TEXT, roi TEXT)`);
         db.run(`CREATE TABLE IF NOT EXISTS assets (id INTEGER PRIMARY KEY AUTOINCREMENT, fileName TEXT, fileSize TEXT, fileUrl TEXT)`);
 
-        // Seed initial data
+        // Seed initial data (Updated with safety check)
         db.get(`SELECT COUNT(*) as count FROM invoices`, (err, row) => {
-            if (row.count === 0) {
+            if (err) {
+                console.error("DB Error:", err.message);
+                return;
+            }
+            if (!row || row.count === 0) {
                 db.run(`INSERT INTO invoices (invoiceRef, billingPeriod, scope, amount, status) VALUES ('INV-2026-AU09', 'August – September 2026', 'Q3 Meta & TikTok Scale Campaign + Creative Retainer', 'AUD $4,100', 'Pending')`);
                 db.run(`INSERT INTO contracts (title, status, signedDate) VALUES ('Master Services Agreement (MSA)', 'Signed & Verified', '2025-10-15')`);
                 db.run(`INSERT INTO videos (title, status) VALUES ('Cut #4: Q3 Brand Awareness V2.mp4', 'Pending Review')`);
@@ -46,23 +50,17 @@ const db = new sqlite3.Database(dbFile, (err) => {
 // AUTOMATED API FETCHERS (Placeholder / Webhook Hooks)
 // ==========================================
 
-// Function para kunin ang live data mula sa Meta Marketing API (Ads / Leads)
 async function fetchLiveMetaAdsData() {
     try {
-        // Dito ilalagay ang Meta Graph API call kapag na-setup na ang Access Token ng client
-        // const response = await axios.get(`https://graph.facebook.com/v18.0/ACT_ID/insights?access_token=YOUR_TOKEN`);
-        // return mapped data...
-        return null; // Bumabalik sa local DB kung walang API token na naka-set
+        return null;
     } catch (error) {
         console.error('Meta API Sync Error:', error.message);
         return null;
     }
 }
 
-// Function para kunin ang live files mula sa Google Drive API (Assets Vault)
 async function fetchLiveGoogleDriveFiles() {
     try {
-        // Dito ilalagay ang Google Drive API call para i-sync ang shared folder ng client
         return null;
     } catch (error) {
         console.error('Google Drive API Sync Error:', error.message);
@@ -75,7 +73,6 @@ async function fetchLiveGoogleDriveFiles() {
 // ==========================================
 
 app.get('/api/all-data', async (req, res) => {
-    // Subukan munang mag-sync mula sa live APIs kung available
     const liveMetaLeads = await fetchLiveMetaAdsData();
     const liveDriveAssets = await fetchLiveGoogleDriveFiles();
 
@@ -87,7 +84,6 @@ app.get('/api/all-data', async (req, res) => {
         db.all(`SELECT * FROM schedule`, (err, rows) => { data.schedule = rows; });
         db.all(`SELECT * FROM tasks`, (err, rows) => { data.tasks = rows; });
         
-        // Gamitin ang live API data kung meron, kundi gamitin ang database
         db.get(`SELECT * FROM leads LIMIT 1`, (err, row) => { 
             data.leads = liveMetaLeads || row; 
         });
@@ -99,16 +95,12 @@ app.get('/api/all-data', async (req, res) => {
     });
 });
 
-// Webhook endpoint para sa real-time updates mula sa client systems (Stripe, Zapier, Make.com)
 app.post('/api/webhook/sync', (req, res) => {
     const { section, payload } = req.body;
     console.log(`Received automated sync for section: ${section}`, payload);
-    
-    // Dito kusang mag-a-update ang database kapag may pumasok na trigger mula sa Zapier/Make.com
     res.json({ success: true, message: 'Data synced successfully via webhook.' });
 });
 
-// Standard CRUD / Management Endpoints
 app.put('/api/invoice', (req, res) => {
     const { invoiceRef, billingPeriod, scope, amount } = req.body;
     db.run(`UPDATE invoices SET invoiceRef = ?, billingPeriod = ?, scope = ?, amount = ? WHERE id = 1`,
