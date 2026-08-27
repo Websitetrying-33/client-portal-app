@@ -10,7 +10,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; }
-        /* Custom scrollbar para malinis tingnan */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #f1f5f9; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
@@ -113,7 +112,9 @@
                         <p class="italic text-slate-500 text-center py-4">Loading media assets...</p>
                     </div>
                 </div>
-                <p class="text-[11px] text-slate-400 mt-6 text-center">Click status button to toggle approval</p>
+                <button onclick="addVideoPrompt()" class="mt-6 w-full bg-slate-700/50 hover:bg-indigo-600 text-slate-300 hover:text-white text-xs font-semibold py-2.5 px-3 rounded-xl transition-all border border-slate-600/60">
+                    + Add New Video Asset
+                </button>
             </div>
 
             <!-- 4. Content Calendar & Schedule -->
@@ -307,10 +308,10 @@
 
         // Action Prompts
         async function editInvoicePrompt() {
-            const ref = prompt("Enter Invoice Ref:", "INV-2026-AU09");
+            const ref = prompt("Enter Invoice Ref:", "MYOB-INV-2026-088");
             const period = prompt("Enter Billing Period:", "August – September 2026");
-            const scope = prompt("Enter Scope of Work:", "Q3 Meta & TikTok Scale Campaign");
-            const amount = prompt("Enter Amount (e.g., AUD $4,100):", "AUD $4,100");
+            const scope = prompt("Enter Scope of Work:", "Social Media Management & Lead Ads Scale");
+            const amount = prompt("Enter Amount (e.g., AUD $4,850.00):", "AUD $4,850.00");
             if(ref) {
                 await fetch('/api/invoice', {
                     method: 'PUT',
@@ -334,6 +335,18 @@
             }
         }
 
+        async function addVideoPrompt() {
+            const title = prompt("Video Title / File Name (e.g., Reel #14 - Sydney Promo.mp4):");
+            if(title) {
+                await fetch('/api/video', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ title, status: 'Pending Review' })
+                });
+                loadDashboard();
+            }
+        }
+
         async function updateVideoStatus(id, currentStatus) {
             const newStatus = currentStatus === 'Pending Review' ? 'Approved ✓' : 'Pending Review';
             await fetch('/api/video/status', {
@@ -345,13 +358,13 @@
         }
 
         async function addSchedulePrompt() {
-            const platform = prompt("Platform (e.g., LinkedIn, Instagram):", "Instagram");
+            const platform = prompt("Platform (e.g., Instagram, TikTok, LinkedIn):", "Instagram");
             const postTitle = prompt("Post Title / Topic:");
             if(platform && postTitle) {
                 await fetch('/api/schedule', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ platform, postTitle, scheduleDate: 'Next Week', status: 'Ready' })
+                    body: JSON.stringify({ platform, postTitle, scheduleDate: 'Next Week AEST', status: 'Ready' })
                 });
                 loadDashboard();
             }
@@ -371,9 +384,9 @@
         }
 
         async function updateLeadsPrompt() {
-            const qualifiedLeads = prompt("Qualified Leads count:", "150 (+20%)");
-            const bookedCalls = prompt("Booked Calls:", "38 (80% show)");
-            const roi = prompt("Campaign ROI:", "5.2x");
+            const qualifiedLeads = prompt("Qualified Leads count:", "184 (+24%)");
+            const bookedCalls = prompt("Booked Calls:", "42 (82% show rate)");
+            const roi = prompt("Campaign ROI:", "5.4x");
             if(qualifiedLeads) {
                 await fetch('/api/leads', {
                     method: 'PUT',
